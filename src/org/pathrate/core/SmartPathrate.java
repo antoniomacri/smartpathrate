@@ -585,9 +585,8 @@ public class SmartPathrate implements IPathrate
 
 		// We can now calculate ADR...
 		double maxMerit = 0.;
-		MathHelper.Mode mode = data.adrModes[0];
-		for (int i = 1; i < data.adrModes.length; i++) {
-			MathHelper.Mode m = data.adrModes[i];
+		MathHelper.Mode mode = null;
+		for (MathHelper.Mode m : data.adrModes) {
 			double merit = m.bellKurtosis * (m.modeCount / (double) m.totalCount);
 			if (merit > maxMerit) {
 				maxMerit = merit;
