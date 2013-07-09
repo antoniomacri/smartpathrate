@@ -74,7 +74,7 @@ public class SmartPathrate implements IPathrate
 	 * 
 	 * @see org.pathrate.core.IPathrate#startAsSender()
 	 */
-	public void startAsSender(ICancelTask task) throws IOException, InterruptedException
+	public void startAsSender(ICancelTask task) throws IOException
 	{
 		sink.info("Starting as sender (port " + TCP_SENDER_PORT + ")...");
 		ServerSocket listener = new ServerSocket(TCP_SENDER_PORT);
@@ -88,97 +88,106 @@ public class SmartPathrate implements IPathrate
 			Socket tcpSocket = listener.accept();
 			sink.info("Connected to " + tcpSocket.getInetAddress().getHostAddress() + ":" + tcpSocket.getPort() + ".");
 
-			tcpReader = tcpSocket.getInputStream();
-			tcpWriter = tcpSocket.getOutputStream();
+			try {
+				tcpReader = tcpSocket.getInputStream();
+				tcpWriter = tcpSocket.getOutputStream();
 
-			// Form receiving UDP address
-			InetAddress udpRemoteAddress = tcpSocket.getInetAddress();
+				// Form receiving UDP address
+				InetAddress udpRemoteAddress = tcpSocket.getInetAddress();
 
-			int payloadSize = MAX_PAYLOAD_SIZE;
-			int trainLength = 3;
-			int trainId = 1;
+				int payloadSize = MAX_PAYLOAD_SIZE;
+				int trainLength = 3;
+				int trainId = 1;
 
-			Command commandCode = Command.ERROR;
-			int commandData;
+				Command commandCode = Command.ERROR;
+				int commandData;
 
-			sink.info("Measuring Roud-Trip Time...");
-			estimateRoundTripTimeSender(tcpReader, tcpWriter);
+				sink.info("Measuring Roud-Trip Time...");
+				estimateRoundTripTimeSender(tcpReader, tcpWriter);
 
-			// Create random packet payload to deal with links that do payload
-			// compression
-			byte[] packetBuffer = new byte[MAX_PAYLOAD_SIZE];
-			Random random = new Random();
-			random.nextBytes(packetBuffer);
+				// Create random packet payload to deal with links that do payload
+				// compression
+				byte[] packetBuffer = new byte[MAX_PAYLOAD_SIZE];
+				Random random = new Random();
+				random.nextBytes(packetBuffer);
 
-			boolean done = false;
+				boolean done = false;
 
-			while (!done) {
-				sink.info("Waiting for commands...");
-				do {
-					if (task.isCancelled()) {
-						done = true;
-						sink.info("Cancelled.");
-						break interactive;
-					}
-					if (tcpReader.read(fourByteBuffer.array(), 0, 4) < 4) {
-						done = true;
-						break;
-					}
-					// Get the command and the data fields from the control
-					// message
-					commandData = fourByteBuffer.getInt(0) >> 8;
-					if (fourByteBuffer.get(3) >= Command.values().length) {
-						commandCode = Command.ERROR;
-					}
-					else {
-						commandCode = Command.values()[fourByteBuffer.get(3)];
-					}
+				while (!done) {
+					sink.info("Waiting for commands...");
+					do {
+						if (task.isCancelled()) {
+							done = true;
+							sink.info("Cancelled.");
+							break interactive;
+						}
+						if (tcpReader.read(fourByteBuffer.array(), 0, 4) < 4) {
+							done = true;
+							break;
+						}
+						// Get the command and the data fields from the control
+						// message
+						commandData = fourByteBuffer.getInt(0) >> 8;
+						if (fourByteBuffer.get(3) >= Command.values().length) {
+							commandCode = Command.ERROR;
+						}
+						else {
+							commandCode = Command.values()[fourByteBuffer.get(3)];
+						}
 
-					sink.info(String.format("[%08X] %s(%d)", fourByteBuffer.getInt(0), commandCode, commandData));
+						sink.info(String.format("[%08X] %s(%d)", fourByteBuffer.getInt(0), commandCode, commandData));
 
-					switch (commandCode) {
-					case PAYLOAD_SIZE:
-						payloadSize = commandData;
-						break;
-					case TRAIN_LENGTH:
-						trainLength = commandData;
-						break;
-					case SEND:
-						trainId = commandData;
-						break;
-					case ACK_TRAIN:
-					case NEG_ACK_TRAIN:
-						// An ACK or NEG_ACK for a packet train
-						break;
-					case GAME_OVER:
-						// End of measurements
-						done = true;
-						break;
+						switch (commandCode) {
+						case PAYLOAD_SIZE:
+							payloadSize = commandData;
+							break;
+						case TRAIN_LENGTH:
+							trainLength = commandData;
+							break;
+						case SEND:
+							trainId = commandData;
+							break;
+						case ACK_TRAIN:
+						case NEG_ACK_TRAIN:
+							// An ACK or NEG_ACK for a packet train
+							break;
+						case GAME_OVER:
+							// End of measurements
+							done = true;
+							break;
 
-					default:
-						sink.info("Unexpected control message... aborting.");
-						done = true;
-					}
-				} while (commandCode != Command.SEND && !done);
+						default:
+							sink.info("Unexpected control message... aborting.");
+							done = true;
+						}
+					} while (commandCode != Command.SEND && !done);
 
-				if (!done && commandCode == Command.SEND) {
-					DatagramPacket packet = new DatagramPacket(packetBuffer, 0, payloadSize, udpRemoteAddress,
-							UDP_RECEIVER_PORT);
-					// Each packet carries a packet id (unique in each train)
-					// and a round id (unique in the entire
-					// execution).
-					ByteBuffer buffer = ByteBuffer.wrap(packetBuffer).order(ByteOrder.BIG_ENDIAN);
-					buffer.putInt(0);
-					buffer.putInt(trainId);
-					for (int packetId = 0; packetId < trainLength; packetId++) {
-						buffer.position(0);
-						buffer.putInt(packetId);
-						udpSocket.send(packet);
+					if (!done && commandCode == Command.SEND) {
+						DatagramPacket packet = new DatagramPacket(packetBuffer, 0, payloadSize, udpRemoteAddress,
+								UDP_RECEIVER_PORT);
+						// Each packet carries a packet id (unique in each train)
+						// and a round id (unique in the entire
+						// execution).
+						ByteBuffer buffer = ByteBuffer.wrap(packetBuffer).order(ByteOrder.BIG_ENDIAN);
+						buffer.putInt(0);
+						buffer.putInt(trainId);
+						for (int packetId = 0; packetId < trainLength; packetId++) {
+							buffer.position(0);
+							buffer.putInt(packetId);
+							udpSocket.send(packet);
+						}
 					}
 				}
-			}
 
-			tcpSocket.close();
+				tcpSocket.close();
+			}
+			catch (Throwable e) {
+				StringWriter writer = new StringWriter();
+				PrintWriter printWriter = new PrintWriter(writer);
+				e.printStackTrace(printWriter);
+				printWriter.flush();
+				sink.error(writer.toString());
+			}
 		} while (true);
 
 		listener.close();
