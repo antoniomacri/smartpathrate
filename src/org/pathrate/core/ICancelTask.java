@@ -4,6 +4,7 @@
 
 package org.pathrate.core;
 
-public interface ICancelTask {
+public interface ICancelTask
+{
 	public boolean isCancelled();
 }

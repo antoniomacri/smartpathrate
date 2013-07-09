@@ -7,7 +7,8 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Random;
 
-public class SmartPathrate implements IPathrate {
+public class SmartPathrate implements IPathrate
+{
 	protected static final int TCP_SENDER_PORT = 13000;
 	protected static final int UDP_RECEIVER_PORT = 13000;
 	protected static final int MAXIMUM_TRANSMISSION_UNIT = 1500;
@@ -62,7 +63,8 @@ public class SmartPathrate implements IPathrate {
 	 * @see org.pathrate.core.IPathrate#install(org.pathrate.core.ISink,
 	 * org.pathrate.core.ICancelTask)
 	 */
-	public void install(ISink sink, IConnectionSpeedProvider connectionSpeedProvider) {
+	public void install(ISink sink, IConnectionSpeedProvider connectionSpeedProvider)
+	{
 		this.sink = sink;
 		this.connectionSpeedProvider = connectionSpeedProvider;
 	}
@@ -72,7 +74,8 @@ public class SmartPathrate implements IPathrate {
 	 * 
 	 * @see org.pathrate.core.IPathrate#startAsSender()
 	 */
-	public void startAsSender(ICancelTask task) throws IOException, InterruptedException {
+	public void startAsSender(ICancelTask task) throws IOException, InterruptedException
+	{
 		sink.info("Starting as sender (port " + TCP_SENDER_PORT + ")...");
 		ServerSocket listener = new ServerSocket(TCP_SENDER_PORT);
 
@@ -186,7 +189,8 @@ public class SmartPathrate implements IPathrate {
 	 * 
 	 * @see org.pathrate.core.IPathrate#startAsReceiver(java.net.InetAddress)
 	 */
-	public void startAsReceiver(InetAddress senderAddress, ICancelTask task) throws IOException, InterruptedException {
+	public void startAsReceiver(InetAddress senderAddress, ICancelTask task) throws IOException, InterruptedException
+	{
 		sink.info("Starting as receiver...");
 
 		sink.info("Creating UDP socket...");
@@ -364,7 +368,8 @@ public class SmartPathrate implements IPathrate {
 	 * @return an approximated value for the kernel-to-user latency
 	 */
 	private static int calculateKernelToUserLatency(DatagramSocket udpSocket, int payloadSize)
-			throws UnknownHostException, IOException {
+			throws UnknownHostException, IOException
+	{
 		// Create random payload (maybe here it doesn't matter)
 		byte[] packetBuffer = new byte[MAX_PAYLOAD_SIZE];
 		Random random = new Random();
@@ -393,7 +398,8 @@ public class SmartPathrate implements IPathrate {
 	 *            the output stream associated to the UDP socket
 	 * @throws IOException
 	 */
-	private void estimateRoundTripTimeSender(InputStream reader, OutputStream writer) throws IOException {
+	private void estimateRoundTripTimeSender(InputStream reader, OutputStream writer) throws IOException
+	{
 		for (int i = 0; i < RTT_ATTEMPTS; i++) {
 			reader.read(fourByteBuffer.array());
 			writer.write(fourByteBuffer.array());
@@ -411,7 +417,8 @@ public class SmartPathrate implements IPathrate {
 	 * @return the estimated round-trip time in milliseconds
 	 * @throws IOException
 	 */
-	private int estimateRoundTripTimeReceiver(InputStream reader, OutputStream writer) throws IOException {
+	private int estimateRoundTripTimeReceiver(InputStream reader, OutputStream writer) throws IOException
+	{
 		fourByteBuffer.putInt(0, (int) System.nanoTime()); // put a random value
 
 		long sumRtt = 0;
@@ -437,7 +444,8 @@ public class SmartPathrate implements IPathrate {
 	 *            the data associated with the specified command
 	 * @throws IOException
 	 */
-	private void sendCommand(Command command, int data) throws IOException {
+	private void sendCommand(Command command, int data) throws IOException
+	{
 		int commandAndData = command.ordinal() | (data << 8);
 		fourByteBuffer.putInt(0, commandAndData);
 		tcpWriter.write(fourByteBuffer.array());
@@ -458,7 +466,8 @@ public class SmartPathrate implements IPathrate {
 	 * @return an integer specifying the number of packets received correctly (i.e., in order)
 	 * @throws IOException
 	 */
-	private int receiveTrain(int payloadSize, int trainLength, int trainId, int[] timestamps) throws IOException {
+	private int receiveTrain(int payloadSize, int trainLength, int trainId, int[] timestamps) throws IOException
+	{
 		byte[] buffer = new byte[MAX_PAYLOAD_SIZE];
 		DatagramPacket packet = new DatagramPacket(buffer, payloadSize);
 		ByteBuffer bb = ByteBuffer.wrap(buffer).order(ByteOrder.BIG_ENDIAN);
@@ -507,7 +516,8 @@ public class SmartPathrate implements IPathrate {
 	}
 
 	protected void estimateCapacity(CapacityData data, int[][] allTimestamps, int tcount, int trainLength,
-			int packetSize) throws FileNotFoundException {
+			int packetSize) throws FileNotFoundException
+	{
 		for (int tt = 0; tt < tcount; tt++) {
 			int[] timestamps = allTimestamps[tt];
 			int[] deltas = calculateDeltas(timestamps, trainLength);
@@ -616,7 +626,8 @@ public class SmartPathrate implements IPathrate {
 		data.done = false;
 	}
 
-	protected static int[] calculateDeltas(int[] timestamps, int trainLength) {
+	protected static int[] calculateDeltas(int[] timestamps, int trainLength)
+	{
 		int[] deltas = new int[trainLength];
 		for (int i = trainLength - 1; i > 0; i--) {
 			deltas[i] = timestamps[i] - timestamps[i - 1];
@@ -635,7 +646,8 @@ public class SmartPathrate implements IPathrate {
 	 *            an approximated value of the kernel-to-user latency
 	 * @return
 	 */
-	protected int[][] calculateJumpsAndPlateaus(int[] deltas, int minPossibleDelta, int kernelToUserLatency) {
+	protected int[][] calculateJumpsAndPlateaus(int[] deltas, int minPossibleDelta, int kernelToUserLatency)
+	{
 		int count = 0;
 		int[] jumps = new int[deltas.length];
 		int[] plateaus = new int[deltas.length];
@@ -686,7 +698,8 @@ public class SmartPathrate implements IPathrate {
 		return result;
 	}
 
-	private static double[] calculateCapacitiesFromFilteredDeltas(int[] deltas, int[][] jumps, int packetSize) {
+	private static double[] calculateCapacitiesFromFilteredDeltas(int[] deltas, int[][] jumps, int packetSize)
+	{
 		double[] caps = new double[deltas.length - 1];
 		int count = 0;
 		int j = 1;
@@ -704,7 +717,8 @@ public class SmartPathrate implements IPathrate {
 		return result;
 	}
 
-	private static double[] calculateCapacityFromAdr(int[] timestamps, int[][] jumps, int trainLength, int packetSize) {
+	private static double[] calculateCapacityFromAdr(int[] timestamps, int[][] jumps, int trainLength, int packetSize)
+	{
 		if (jumps[0].length > 0) {
 			// Skip if there is a jump at the beginning or at the end of the
 			// measurement
@@ -718,7 +732,8 @@ public class SmartPathrate implements IPathrate {
 	}
 
 	@Override
-	public CapacityData getCapacityData() {
+	public CapacityData getCapacityData()
+	{
 		return capacityData;
 	}
 }
