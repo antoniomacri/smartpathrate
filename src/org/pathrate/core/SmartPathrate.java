@@ -339,9 +339,10 @@ public class SmartPathrate implements IPathrate
 				trainLength = nextTrainLength;
 			}
 			runningTime = (System.nanoTime() - startTime) / (1000 * 1000 * 1000);
+
+			sendCommand(Command.GAME_OVER, 0);
 		}
 		finally {
-			sendCommand(Command.GAME_OVER, 0);
 			tcpSocket.close();
 		}
 
