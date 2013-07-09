@@ -134,8 +134,9 @@ public class Stats
 	{
 		int zero = subtractFirst && values.length > 0 ? values[0] : 0;
 		writer.println("\\measurement{" + getIndentifier(identifier) + "}{");
+		String format = xMultiplier == Math.rint(xMultiplier) ? " %.0f\t%d \\\\" : " %.3f\t%d \\\\";
 		for (int i = 0; i < values.length; i++) {
-			writer.format(locale, " %.3f\t%d \\\\", (i * xMultiplier), (values[i] - zero));
+			writer.format(locale, format, (i * xMultiplier), (values[i] - zero));
 			writer.println();
 		}
 		writer.println("}");
