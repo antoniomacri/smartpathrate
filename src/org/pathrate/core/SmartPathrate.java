@@ -686,7 +686,7 @@ public class SmartPathrate implements IPathrate
 					}
 				}
 			}
-			if (prevIndex - i >= 8) {
+			if (prevIndex - i >= 4) {
 				jumps[count] = i;
 				plateaus[count] = prevIndex - i + 1;
 				// System.out.format("set jump at packet %d with plateau %d",
@@ -696,7 +696,7 @@ public class SmartPathrate implements IPathrate
 			}
 			else {
 				prevIndex = i - 1;
-				// System.out.format("skip (less than 10 packets)");
+				// System.out.format("skip (less than 4 packets)");
 			}
 			outOfProfile = 0;
 			// System.out.println(", restart from packet " + prevIndex);
