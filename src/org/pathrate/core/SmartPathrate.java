@@ -318,7 +318,7 @@ public class SmartPathrate implements IPathrate
 					if (middleCapacity >= data.prevCapacityEstimateLower
 							&& middleCapacity <= data.prevCapacityEstimateUpper) {
 						if (data.canStop == 3) {
-							// break;
+							break;
 						}
 						data.canStop++;
 					}
@@ -622,6 +622,8 @@ public class SmartPathrate implements IPathrate
 			}
 		}
 
+		data.prevCapacityEstimateLower = data.capacityEstimateLower;
+		data.prevCapacityEstimateUpper = data.capacityEstimateUpper;
 		if (mode == null) {
 			data.capacityEstimateLower = data.adrValue - data.binWidth / 2.;
 			data.capacityEstimateUpper = data.adrValue + data.binWidth / 2.;
