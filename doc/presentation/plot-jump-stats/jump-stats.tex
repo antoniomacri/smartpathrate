@@ -1,0 +1,88 @@
+% !TeX program = LuaLaTeX
+
+\documentclass[tikz]{standalone}
+
+
+\usepackage{amsmath}
+\usepackage{pgfplots,pgfplotstable}
+
+\pgfplotsset{compat=1.7}
+\pgfplotstableset{format=inline, row sep=crcr}
+
+
+\newcommand*\measurement[2]{%
+  \edef\next{\noexpand
+    \pgfplotstableread{\unexpanded{#2}}{\expandafter\noexpand
+      \csname measurement#1\endcsname}
+  }\next
+}
+
+
+\input{\filename}
+
+
+\begin{document}
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={\# of packets}, ylabel={Occurrences},
+  xmin=0, ymin=0, xmax=\trainlength
+]
+\begingroup\edef\next{\endgroup\noexpand
+  \addplot [ybar interval] table from \expandafter\noexpand\csname
+    measurementdistribution-plateau-lengths\endcsname;
+}\next
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={\# of packets}, ylabel={CCDF $P(X>x)$},
+  xmin=0, ymin=0, xmax=\trainlength
+]
+\begingroup\edef\next{\endgroup\noexpand
+  \addplot [draw=blue] table from \expandafter\noexpand\csname
+   measurementccdf-plateau-lengths\endcsname;
+}\next
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={Duration (\mu s)}, ylabel={Occurrences},
+  xmin=0, ymin=0, xmax=40000
+]
+\begingroup\edef\next{\endgroup\noexpand
+  \addplot [ybar interval] table from \expandafter\noexpand\csname
+    measurementdistribution-jump-distances\endcsname;
+}\next
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={Duration (\mu s)}, ylabel={CCDF $P(X>x)$},
+  xmin=0, ymin=0, xmax=40000
+]
+\begingroup\edef\next{\endgroup\noexpand
+  \addplot [draw=blue] table from \expandafter\noexpand\csname
+    measurementccdf-jump-distances\endcsname;
+}\next
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={\# of packets}, ylabel={CCDF $P(X>x)$},
+  xmin=0, ymin=0, xmax=\trainlength
+]
+\begingroup\edef\next{\endgroup\noexpand
+  \addplot [draw=blue] table from \expandafter\noexpand\csname
+    measurementccdf-plateau-lengths\endcsname;
+}\next
+\draw [red, dashed] (axis cs:0,\ccdfplateaufourthy) -- (axis cs:40,\ccdfplateaufourthy)
+  node[inner sep=1pt, fill] {} -- (axis cs:40,0);
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

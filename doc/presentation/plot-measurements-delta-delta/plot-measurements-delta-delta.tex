@@ -1,0 +1,258 @@
+% !TeX program = LuaLaTeX
+
+\PassOptionsToPackage{dvipsnames}{xcolor}
+\documentclass[tikz]{standalone}
+
+\usepackage{amsmath,siunitx}
+\usepackage{pgfplots,pgfplotstable}
+
+\usetikzlibrary{shapes.geometric,calc,intersections,fadings}
+\pgfplotsset{compat=1.7}
+\pgfplotstableset{format=inline, row sep=crcr}
+\tikzset{highlight/.style={draw, red, thick}}
+\tikzfading[name=fade inside, inner color=transparent!0, outer color=transparent!40]
+
+\makeatletter
+\newcommand*\measurement[2]{%
+  \edef\next{\noexpand
+    \pgfplotstableread{\unexpanded{#2}}{\expandafter\noexpand
+      \csname measurements#1\endcsname}
+  }\next
+}
+\newcommand*\ifnotempty[1]{%
+  \begingroup
+  \def\@tempa{ }%
+  \ifx#1\@tempa
+    \endgroup \expandafter\@gobble
+  \else
+    \endgroup \expandafter\@firstofone
+  \fi
+}
+\makeatother
+
+
+\def\folder{Clear-802.11b-Unprotected-1}
+
+
+\begin{document}
+
+\makeatletter
+\input{\folder/measurements.tex}
+\input{\folder/params.tex}
+\input{\folder/results.tex}
+\makeatother
+
+\foreach \x in {118} {
+% 44, 118
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Cumulative dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=\maxcumulativedispersion,
+    legend entries={\folder-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurements\x\endcsname};
+  }\next
+  \end{axis}
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Cumulative dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=\maxcumulativedispersion,
+    legend entries={\folder-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurements\x\endcsname};
+  }\next
+  \edef\xjumps{\csname jumps@\x\endcsname}
+  \ifnotempty{\xjumps}{
+    \foreach \xa / \ya / \xb / \yb / \ellipsecenter / \ellipseyradius / \cap in \xjumps {
+      \begingroup\edef\next{\endgroup
+         \noexpand\draw [highlight]
+           (axis cs:\the\numexpr(\xa+\xb)/2,\ellipsecenter) circle (1em and 0.6em);
+      }\next
+    }
+  }
+  \end{axis}
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Inter-packet dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=3000,% restrict y to domain=0:6000,
+    legend entries={\folder-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltas\x\endcsname};
+  }\next
+  \end{axis}
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Inter-packet dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=3000,% restrict y to domain=0:6000,
+    legend entries={\folder-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltas\x\endcsname};
+  }\next
+  \node [highlight, ellipse, x radius=1em, minimum width=2.4em] (a) at (axis cs:28,200) {};
+  \node [highlight, ellipse, x radius=1em, minimum width=2.2em] (b) at (axis cs:39,200) {};
+  \node [highlight, ellipse, x radius=1em, minimum width=1.5em] (c) at (axis cs:47,80) {};
+  \node [anchor=south, fill=white, path fading=fade inside] (d1)
+    at ($(a)!0.5!(b)+(-0.4em,1.3em)$) {$\delta=183$\,\mu s};
+  \node [anchor=south, fill=white, path fading=fade inside] (d2)
+    at ($(c)+(2.4em,1.1em)$) {$\delta=61$\,\mu s};
+  \draw[->] (d1) -- (a);
+  \draw[->] (d1) -- (b);
+  \draw[->] (d2) -- (c);
+  \end{axis}
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Inter-packet dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=3000,% restrict y to domain=0:6000,
+    extra y ticks = {\minpossibledelta},
+    extra y tick labels = {$\Delta_\mathrm{min}$},
+    extra y tick style = {tick pos=right, ticklabel pos=right},
+    legend entries={\folder-\#\x}
+  ]
+  \edef\minpossibledelta{\the\numexpr1500*8/\wifispeed}
+  \draw[fill=red, opacity=0.2]
+    (axis cs:0,\minpossibledelta) -- (axis cs:\trainlength,\minpossibledelta) -- 
+    (axis cs:\trainlength,0) -- (axis cs:0,0) -- cycle;
+  \draw[draw=red]
+    (axis cs:0,\minpossibledelta) -- (axis cs:\trainlength,\minpossibledelta);
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltas\x\endcsname};
+  }\next
+  \edef\middleofxaxis{\the\numexpr\trainlength/2}
+  \edef\centerpointyic{\the\numexpr\minpossibledelta/2}
+  \coordinate (middleoflineic) at (axis cs:\middleofxaxis,\minpossibledelta);
+  \coordinate (centerpointic) at (axis cs:\middleofxaxis,\centerpointyic);
+  \end{axis}
+  \node[red, fill=white, path fading=fade inside, anchor=center, rounded corners=0.3em]
+    at (centerpointic) {Coalescence};
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Inter-packet dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=3000,% restrict y to domain=0:6000,
+    extra y ticks = {\minpossibledelta, \noicthreshold},
+    extra y tick labels = {$\Delta_\mathrm{min}$, $k\delta_\mathrm{ku}$},
+    extra y tick style = {tick pos=right, ticklabel pos=right},
+    legend entries={\folder-\#\x}
+  ]
+  \edef\minpossibledelta{\the\numexpr1500*8/\wifispeed}
+  \edef\noicthreshold{\the\numexpr5\kerneltouserlatency}
+  \draw[fill=red, opacity=0.2]
+    (axis cs:0,\minpossibledelta) -- (axis cs:\trainlength,\minpossibledelta) -- 
+    (axis cs:\trainlength,0) -- (axis cs:0,0) -- cycle;
+  \draw[draw=red]
+    (axis cs:0,\minpossibledelta) -- (axis cs:\trainlength,\minpossibledelta);
+  \draw[fill=green, opacity=0.2]
+    (axis cs:0,\noicthreshold) -- (axis cs:\trainlength,\noicthreshold) -- 
+    (axis cs:\trainlength,3000) -- (axis cs:0,3000) -- cycle;
+  \draw[draw=green]
+    (axis cs:0,\noicthreshold) -- (axis cs:\trainlength,\noicthreshold);
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltas\x\endcsname};
+  }\next
+  \edef\middleofxaxis{\the\numexpr\trainlength/2}
+  \edef\centerpointyic{\the\numexpr\minpossibledelta/2}
+  \coordinate (middleoflineic) at (axis cs:\middleofxaxis,\minpossibledelta);
+  \coordinate (centerpointic) at (axis cs:\middleofxaxis,\centerpointyic);
+  \edef\centerpointynoic{\the\numexpr(3000+\noicthreshold)/2}
+  \coordinate (middleoflinenoic) at (axis cs:\middleofxaxis,\noicthreshold);
+  \coordinate (centerpointnoic) at (axis cs:\middleofxaxis,\centerpointynoic);
+  \end{axis}
+  \node[red, fill=white, path fading=fade inside, anchor=center, rounded corners=0.3em]
+    at (centerpointic) {Coalescence};
+  \node[green!40!blue!100, fill=white, path fading=fade inside, anchor=center, rounded corners=0.3em]
+    at (centerpointnoic) {No coalescence};
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Delta between interpacket dispersions (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=1000,% restrict y to domain=0:2000,
+    mark=*, legend entries={\folder-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltadeltas\x\endcsname};
+  }\next
+  \end{axis}
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Delta between interpacket dispersions (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=1000,% restrict y to domain=0:2000,
+    mark=*, legend entries={\folder-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltadeltas\x\endcsname};
+  }\next
+  \end{axis}
+  \draw [highlight]
+    ($(current bounding box.south west)!0.5!(current bounding box.south east)+(-2.2em,2.7em)$)
+    circle (1em and 0.6em);
+  \draw [highlight]
+    ($(current bounding box.south west)!0.5!(current bounding box.south east)+(-0.2em,2.7em)$)
+    circle (0.8em and 0.6em);
+  \draw [highlight]
+    ($(current bounding box.south west)!0.5!(current bounding box.south east)+(1.3em,2.7em)$)
+    circle (0.5em and 0.6em);
+  \end{tikzpicture}
+
+  \begin{tikzpicture}
+  \edef\noicthreshold{\the\numexpr\kerneltouserlatency}
+  \begin{axis}[
+    xlabel={Packet ID}, ylabel={Delta between interpacket dispersions (\mu s)},
+    xmin=0, ymin=0, xmax=\trainlength, ymax=1000,% restrict y to domain=0:2000,
+    extra y ticks = {\noicthreshold}, extra y tick label = {$\delta_\mathrm{ku}$},
+    extra y tick style = {tick pos=right, ticklabel pos=right},
+    mark=*, legend entries={\folder-\#\x}
+  ]
+  \draw[fill=green, opacity=0.2]
+    (axis cs:0,\noicthreshold) -- (axis cs:\trainlength,\noicthreshold) -- 
+    (axis cs:\trainlength,1000) -- (axis cs:0,1000) -- cycle;
+  \draw[draw=green]
+    (axis cs:0,\noicthreshold) -- (axis cs:\trainlength,\noicthreshold);
+  \draw[fill=red, opacity=0.2]
+    (axis cs:0,\noicthreshold) -- (axis cs:\trainlength,\noicthreshold) -- 
+    (axis cs:\trainlength,0) -- (axis cs:0,0) -- cycle;
+  \draw[draw=red]
+    (axis cs:0,\noicthreshold) -- (axis cs:\trainlength,\noicthreshold);
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+      \unexpanded\expandafter{\csname measurementsdeltadeltas\x\endcsname};
+  }\next
+  \edef\middleofxaxis{\the\numexpr\trainlength/2}
+  \edef\centerpointynoic{\the\numexpr(1000+\noicthreshold)/2}
+  \edef\centerpointyic{\the\numexpr1000/3+2*\noicthreshold/3}
+  \coordinate (middleofline) at (axis cs:\middleofxaxis,\noicthreshold);
+  \coordinate (centerpointnoic) at (axis cs:\middleofxaxis,\centerpointynoic);
+  \coordinate (centerpointic) at (axis cs:\middleofxaxis,\centerpointyic);
+  \end{axis}
+  \node[green!40!blue!100, fill=white, path fading=fade inside, anchor=center, rounded corners=0.3em]
+    at (centerpointnoic) {No coalescence};
+  \node[red, fill=white, path fading=fade inside, anchor=center, rounded corners=0.3em]
+    (ic) at ($(centerpointic)+(-3.5em,0)$) {Coalescence};
+  \draw[-stealth, red, thick] (ic) -- (middleofline);
+  \end{tikzpicture}
+}
+
+\end{document}

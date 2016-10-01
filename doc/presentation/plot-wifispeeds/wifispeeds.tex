@@ -1,0 +1,30 @@
+% !TeX program = LuaLaTeX
+
+\documentclass{standalone}
+
+\usepackage{pgfplots,pgfplotstable}
+
+\pgfplotsset{compat=1.7}
+\pgfplotstableset{format=inline, row sep=crcr}
+
+\newcommand*\measurement[2]{%
+  \pgfplotstableread{#2}{\measurementx}
+}
+
+\begin{document}
+\begin{tikzpicture}
+\pgfplotscreateplotcyclelist{color-list}{
+  red, green, yellow, blue, brown, orange, cyan, magenta, gray
+}
+\begin{axis}[
+  xlabel={Train ID}, ylabel={Wi-Fi speed (Mbps)},
+  xmin=0, ymin=0, xmax=90, x=4pt, y=2pt, ytick={5,11,18,24,36,48,54},
+  cycle list name=color-list
+]
+\foreach \x in {1,...,7} {
+  \input{wifispeed-\x.tex}
+  \addplot table from \measurementx;
+}
+\end{axis}
+\end{tikzpicture}
+\end{document}

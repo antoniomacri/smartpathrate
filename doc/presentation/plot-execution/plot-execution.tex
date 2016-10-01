@@ -1,0 +1,169 @@
+% !TeX program = LuaLaTeX
+
+\documentclass[tikz]{standalone}
+
+\usepackage{amsmath}
+\usepackage{pgfplots,pgfplotstable}
+\usepackage{siunitx}
+
+
+\usetikzlibrary{shapes.geometric,calc,intersections}
+\pgfplotsset{compat=1.7}
+\pgfplotstableset{format=inline, row sep=crcr}
+
+
+\makeatletter
+\newcommand*\measurement[2]{%
+  \edef\next{\noexpand
+    \pgfplotstableread{\unexpanded{#2}}{\expandafter\noexpand
+      \csname measurements#1\endcsname}
+  }\next
+}
+\newcommand*\ifnotempty[1]{%
+  \begingroup
+  \def\@tempa{ }%
+  \ifx#1\@tempa
+    \endgroup \expandafter\@gobble
+  \else
+    \endgroup \expandafter\@firstofone
+  \fi
+}
+\makeatother
+
+\def\folder{2013.06.19-1}
+
+
+\makeatletter
+\input{\folder/params.tex}
+\input{\folder/results.tex}
+\edef\lastround{\the\numexpr\numberofrounds-1\relax}
+\makeatother
+
+\begin{document}
+
+\foreach \x in {\lastround,...,\lastround} {
+    \begin{tikzpicture}
+    \begin{axis}[
+      ybar, xmin=0, ymin=0, y=0.088pt, x=3pt,
+      xmax=100, restrict x to domain=0:500, %%
+      legend entries={\texttt{paircaps} round \#\x}
+    ]
+    \begingroup
+    \let\addplot\relax
+    \edef\next{\endgroup
+      \addplot [ybar interval] table from %
+      \unexpanded\expandafter{\csname measurementspaircaps@\x\endcsname};
+    }\next
+    \end{axis}
+    \end{tikzpicture}
+
+    \begin{tikzpicture}
+    \begin{axis}[
+      ybar, xmin=0, ymin=0, y=0.088pt, x=3pt,
+      xmax=100, restrict x to domain=0:500, %%
+      legend entries={\texttt{paircaps} round \#\x}
+    ]
+    \begingroup
+    \let\addplot\relax
+    \edef\next{\endgroup
+      \addplot [ybar interval] table from %
+      \unexpanded\expandafter{\csname measurementspaircaps@\x\endcsname};
+    }\next
+    \edef\xmodes{\csname modes@paircaps@\x\endcsname}
+    \ifnotempty{\xmodes}{
+      \foreach \lmode/\rmode / \lbell/\rbell / \mcount/\bcount / \kurtosis in \xmodes {
+        \begingroup
+        \let\fill\relax
+        \edef\next{\endgroup
+          \fill[draw, thick, red, fill opacity=0.3]
+            (axis cs:\lbell,0) |- (axis cs:\rbell,\bcount) -- (axis cs:\rbell,0);
+          \fill[draw, thick, orange, fill opacity=0.5]
+            (axis cs:\lmode,0) |- (axis cs:\rmode,\mcount) -- (axis cs:\rmode,0);
+        }\next
+      }
+    }
+    \end{axis}
+    \end{tikzpicture}
+
+    \begin{tikzpicture}
+    \begin{axis}[
+      ybar, xmin=0, ymin=0, y=7pt, x=3pt,
+      xmax=100, restrict x to domain=0:500, %%
+      legend entries={\texttt{adrcaps} round \#\x}
+    ]
+    \begingroup
+    \let\addplot\relax
+    \edef\next{\endgroup
+      \addplot [ybar interval] table from %
+      \unexpanded\expandafter{\csname measurementsadrcaps@\x\endcsname};
+    }\next
+    \end{axis}
+    \end{tikzpicture}
+
+    \begin{tikzpicture}
+    \begin{axis}[
+      ybar, xmin=0, ymin=0, y=7pt, x=3pt,
+      xmax=100, restrict x to domain=0:500, %%
+      legend entries={\texttt{adrcaps} round \#\x}
+    ]
+    \begingroup
+    \let\addplot\relax
+    \edef\next{\endgroup
+      \addplot [ybar interval] table from %
+      \unexpanded\expandafter{\csname measurementsadrcaps@\x\endcsname};
+    }\next
+    \edef\xmodes{\csname modes@adrcaps@\x\endcsname}
+    \ifnotempty{\xmodes}{
+      \foreach \lmode/\rmode / \lbell/\rbell / \mcount/\bcount / \kurtosis in \xmodes {
+        \begingroup
+        \let\fill\relax
+        \edef\next{\endgroup
+          \fill[draw, thick, red, fill opacity=0.3]
+            (axis cs:\lbell,0) |- (axis cs:\rbell,\bcount) -- (axis cs:\rbell,0);
+          \fill[draw, thick, orange, fill opacity=0.5]
+            (axis cs:\lmode,0) |- (axis cs:\rmode,\mcount) -- (axis cs:\rmode,0);
+        }\next
+      }
+    }
+    \end{axis}
+    \end{tikzpicture}
+
+    \begin{tikzpicture}
+    \begin{axis}[
+      ybar, xmin=0, ymin=0, xmax=100,
+      extra x ticks = {\adr},
+      extra x tick labels = {ADR},
+      extra x tick style = {grid=major, tick pos=right, ticklabel pos=right},
+    ]
+    \begingroup
+    \let\addplot\relax
+    \edef\next{\endgroup
+      \addplot [ybar interval, gray!40, restrict x to domain=0:\adr] table from %
+        \unexpanded\expandafter{\csname measurementspaircaps@\x\endcsname};
+      \addplot [ybar interval, restrict x to domain=\adr:500] table from %
+        \unexpanded\expandafter{\csname measurementspaircaps@\x\endcsname};
+    }\next
+    \edef\xmodes{\csname modes@paircaps@\x\endcsname}
+    \ifnotempty{\xmodes}{
+      \foreach \lmode/\rmode / \lbell/\rbell / \mcount/\bcount / \kurtosis in \xmodes {
+        \begingroup
+        \let\fill\relax
+        \edef\next{\endgroup
+          \ifdim\rmode pt< \adr pt
+            \fill[draw, thick, orange!40, fill opacity=0.5]
+              (axis cs:\lmode,0) |- (axis cs:\rmode,\mcount) -- (axis cs:\rmode,0);
+          \else
+            \fill[draw, thick, orange, fill opacity=0.5]
+             (axis cs:\lmode,0) |- (axis cs:\rmode,\mcount) -- (axis cs:\rmode,0);
+          \fi
+        }\next
+      }
+    }
+    % gray bars overwrite axes
+    \draw (rel axis cs:0,0) -- (rel axis cs:0,1);
+    \draw (rel axis cs:0,0) -- (rel axis cs:1,0);
+    \end{axis}
+    \end{tikzpicture}
+}
+
+\end{document}

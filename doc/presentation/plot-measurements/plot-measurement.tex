@@ -1,0 +1,59 @@
+% !TeX program = LuaLaTeX
+
+\documentclass[tikz]{standalone}
+
+\usepackage{pgfplots,pgfplotstable}
+\usepackage{etoolbox}
+
+\pgfplotsset{compat=1.7}
+\pgfplotstableset{format=inline, row sep=crcr}
+
+\newcommand*\measurement[2]{%
+  \edef\next{\noexpand
+    \pgfplotstableread{\unexpanded{#2}}{\expandafter\noexpand
+      \csname measurements#1\endcsname}
+  }\next
+}
+
+\makeatletter
+\def\packetsize{1500}
+\input{\filename}
+\makeatother
+
+\begin{document}
+\foreach \x / \xmax / \ymax in \measurementlist {
+\begin{tikzpicture}
+  \begin{axis}[
+    xlabel={Packet ID},
+    ylabel={Cumulative dispersion (\mu s)},
+    xmin=0, ymin=0, xmax=\xmax, ymax=\ymax,
+    legend entries={\filename-\#\x}
+  ]
+  \begingroup\edef\next{\endgroup
+    \noexpand\addplot [draw=blue] table from %
+    \unexpanded\expandafter{\csname measurements\x\endcsname};
+  }\next
+  \ifcsvoid{jumps@\x}{}{
+    \edef\xjumps{\csname jumps@\x\endcsname}
+    \foreach \xa / \ya / \xb / \yb / \ellipsecenter / \ellipseyradius in \xjumps {
+      \begingroup\edef\next{\endgroup
+        \noexpand\coordinate (a) at (axis cs:\the\numexpr\xa-1,\ya);
+        \noexpand\coordinate (c) at (axis cs:\xb,\ya);
+        \noexpand\coordinate (b) at (axis cs:\xb,\yb);
+        \noexpand\draw [gray] (axis cs:\the\numexpr\xa-1,\ellipsecenter)
+          ellipse (3 and \ellipseyradius);
+        \noexpand\draw [black, dashed] (a) -- (c);
+        \noexpand\draw [black, dotted] (c) -- (b);
+      }\next
+    }
+  }
+  \ifcsvoid{wifispeed@\x}{}{
+    \edef\xwifispeed{\csname wifispeed@\x\endcsname}
+    \begingroup\edef\next{\endgroup
+      \noexpand\draw [draw=gray] (0,0) -- (axis cs:\xmax,
+        \directlua{tex.sprint{(8*\packetsize*\xmax)/\xwifispeed}});
+    }\next
+  }
+  \end{axis}
+\end{tikzpicture}}
+\end{document}

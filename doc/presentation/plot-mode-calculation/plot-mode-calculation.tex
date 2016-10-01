@@ -1,0 +1,71 @@
+% !TeX program = LuaLaTeX
+
+\documentclass[tikz]{standalone}
+
+
+\usepackage{amsmath}
+\usepackage{pgfplots,pgfplotstable}
+
+
+\usetikzlibrary{shapes.geometric,calc,intersections}
+\pgfplotsset{compat=1.7}
+\pgfplotstableset{format=inline, row sep=crcr}
+
+\makeatletter
+\newcommand*\measurement[2]{%
+  \edef\next{\noexpand
+    \pgfplotstableread{\unexpanded{#2}}{\expandafter\noexpand
+      \csname measurements#1\endcsname}
+  }\next
+}
+\newcommand*\ifnotempty[1]{%
+  \begingroup
+  \def\@tempa{ }%
+  \ifx#1\@tempa
+    \endgroup \expandafter\@gobble
+  \else
+    \endgroup \expandafter\@firstofone
+  \fi
+}
+\makeatother
+
+\newcommand*\folder{2013.06.11-1}
+
+\makeatletter
+\input{\folder/results.tex}
+\makeatother
+
+
+\begin{document}
+\foreach \x in {9} {
+  \foreach \cap in {paircaps} {
+    \begin{tikzpicture}
+    \begin{axis}[
+      xlabel={Capacity (Mbps)}, ylabel={Occurrencies},
+      ybar, xmin=0, ymin=0,
+      xmax=80, restrict x to domain=0:500, %%
+      legend entries={\texttt{\cap} \folder-\#\x}
+    ]
+    \begingroup\edef\next{\endgroup
+      \noexpand\addplot [ybar interval] table from %
+      \unexpanded\expandafter{\csname measurements\cap @\x\endcsname};
+    }\next
+    \edef\xmodes{\csname modes@\cap @\x\endcsname}
+    \iffalse
+    \ifnotempty{\xmodes}{
+      \foreach \lmode/\rmode / \lbell/\rbell / \mcount/\bcount / \kurtosis in \xmodes {
+        \begingroup\edef\next{\endgroup
+          \noexpand\fill[draw, thick, red, fill opacity=0.3]
+            (axis cs:\lbell,0) |- (axis cs:\rbell,\bcount) -- (axis cs:\rbell,0);
+          \noexpand\fill[draw, thick, orange, fill opacity=0.5]
+            (axis cs:\lmode,0) |- (axis cs:\rmode,\mcount) -- (axis cs:\rmode,0);
+        }\next
+      }
+    }
+    \fi
+    \end{axis}
+    \end{tikzpicture}
+  }
+  \clearpage
+}
+\end{document}
